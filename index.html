@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>داشبورد گریز به مهلکه | Cloud</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS for Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Vazirmatn Font -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <style>
+        body { font-family: 'Vazirmatn', sans-serif; background-color: #121212; color: #e0e0e0; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { border: 1px solid #333; padding: 0.75rem; text-align: right; }
+        th { background-color: #1e1e1e; font-weight: bold; color: #fff; }
+        tr:nth-child(even) { background-color: #1a1a1a; }
+        input[type="text"], input[type="number"], input[type="date"], input[type="datetime-local"], select, textarea { 
+            background-color: #2a2a2a; border: 1px solid #444; color: white; padding: 0.5rem; border-radius: 4px; width: 100%;
+        }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #ef4444; }
+        
+        .btn { padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s; text-align: center; }
+        .btn-primary { background-color: #ef4444; color: white; }
+        .btn-primary:hover { background-color: #dc2626; }
+        .btn-secondary { background-color: #374151; color: white; }
+        .btn-secondary:hover { background-color: #4b5563; }
+        .btn-danger { background-color: #b91c1c; color: white; }
+        .btn-danger:hover { background-color: #991b1b; }
+        
+        .disabled-action { opacity: 0.5; pointer-events: none; }
+        
+        /* Users Grid Styles */
+        .user-card { background-color: #2a2a2a; border: 2px solid #444; border-radius: 8px; padding: 1rem; text-align: center; cursor: pointer; transition: all 0.2s; }
+        .user-card:hover { border-color: #ef4444; background-color: #333; }
+        .user-card.selected { border-color: #ef4444; background-color: #ef4444; color: white; transform: scale(1.05); }
+        
+        @media print {
+            body { background-color: white; color: black; }
+            .no-print { display: none !important; }
+            table { width: 100%; }
+            th, td { border: 1px solid #ddd; color: black; }
+            th { background-color: #f3f4f6; color: black; }
+            tr:nth-child(even) { background-color: #f9fafb; }
+        }
+
+        /* Loading Overlay */
+        #loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { width: 50px; height: 50px; border: 5px solid #333; border-top-color: #ef4444; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- Loading Spinner -->
+    <div id="loader"><div class="spinner"></div><p class="mt-4 text-white">در حال ارتباط با سرور ابری...</p></div>
+
+    <!-- Auth Section -->
+    <div id="auth-section" class="max-w-lg mx-auto mt-12 bg-[#1e1e1e] p-8 rounded-lg border border-gray-800 shadow-xl">
+        <h2 class="text-3xl font-bold text-red-500 mb-2 text-center">عمارت ما</h2>
+        <p class="text-gray-400 text-center mb-8 text-sm">داشبورد گریز به مهلکه</p>
+        
+        <p class="text-sm mb-3 text-center text-gray-300">نام کاربری خود را انتخاب کنید:</p>
+        
+        <!-- User Selection Grid -->
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <div class="user-card" onclick="selectUser('amirhsn')" id="user-amirhsn">
+                <span class="block font-bold">amirhsn</span>
+            </div>
+            <div class="user-card" onclick="selectUser('mohsenxedri')" id="user-mohsenxedri">
+                <span class="block font-bold">mohsenxedri</span>
+            </div>
+            <div class="user-card" onclick="selectUser('morebakhtiar')" id="user-morebakhtiar">
+                <span class="block font-bold">morebakhtiar</span>
+            </div>
+            <div class="user-card" onclick="selectUser('benyamin')" id="user-benyamin">
+                <span class="block font-bold">benyamin</span>
+            </div>
+        </div>
+
+        <div id="password-container" class="mb-8 hidden opacity-0 transition-opacity duration-300">
+            <label class="block text-sm mb-2 text-gray-300 text-center" id="password-label">رمز عبور را وارد کنید</label>
+            <div class="relative max-w-xs mx-auto">
+                <input type="password" id="login-password" dir="ltr" class="text-center text-lg tracking-widest pl-10" placeholder="••••••••">
+                <button type="button" onclick="togglePassword()" class="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white px-2">
+                    <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+            </div>
+            <div class="text-center mt-3">
+                 <button onclick="resetPassword()" class="text-xs text-blue-400 hover:text-blue-300 transition">رمز عبور خود را فراموش کرده‌اید؟</button>
+            </div>
+        </div>
+
+        <button onclick="handleLogin()" id="login-btn" class="btn btn-primary w-full py-3 text-lg shadow-lg shadow-red-900/20 disabled-action">ورود به پنل</button>
+        <p id="auth-error" class="text-red-400 text-sm mt-4 text-center hidden"></p>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="main-dashboard" class="max-w-7xl mx-auto hidden">
+        
+        <!-- Header & Nav -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 border-b border-gray-800 pb-4 no-print gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-red-500">داشبورد گریز به مهلکه</h1>
+                <p class="text-sm text-gray-400 mt-1">مدیریت مالی، رویدادها و فضاها</p>
+            </div>
+            <div class="flex flex-col md:flex-row gap-4 items-center">
+                <div class="bg-[#1e1e1e] px-4 py-2 rounded-lg border border-gray-700 text-sm flex gap-2 items-center">
+                    <span class="text-gray-400">کاربر:</span>
+                    <span id="user-display" class="font-bold text-white"></span>
+                    <span id="role-badge" class="px-2 py-1 rounded text-xs"></span>
+                </div>
+                <button onclick="handleLogout()" class="text-red-400 hover:text-red-300 text-sm">خروج</button>
+            </div>
+        </header>
+
+        <nav class="flex space-x-2 space-x-reverse mb-6 no-print overflow-x-auto pb-2">
+            <button onclick="switchTab('tab-timetable')" class="btn btn-secondary whitespace-nowrap" id="nav-timetable">تقویم و فضاها</button>
+            <button onclick="switchTab('tab-events')" class="btn btn-secondary whitespace-nowrap" id="nav-events">مدیریت رویدادها</button>
+            <button onclick="switchTab('tab-finance')" class="btn btn-secondary whitespace-nowrap" id="nav-finance">فایننس شیت</button>
+            <button onclick="switchTab('tab-crm')" class="btn btn-secondary whitespace-nowrap" id="nav-crm">بانک مخاطبین</button>
+        </nav>
+
+        <!-- TAB: TIMETABLE & SPACES -->
+        <div id="tab-timetable" class="tab-content">
+            <div class="flex justify-between items-center mb-6 no-print">
+                <h2 class="text-2xl font-bold">تقویم رویدادها، تمرین‌ها و جلسات</h2>
+                <button onclick="openTimetableEditor()" class="btn btn-primary admin-only">+ ثبت برنامه جدید</button>
+            </div>
+
+            <!-- Timetable List -->
+            <div id="timetable-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                <!-- Populated by JS -->
+            </div>
+
+            <!-- Timetable Editor -->
+            <div id="timetable-editor" class="bg-[#1e1e1e] p-6 rounded-lg border border-gray-800 hidden mb-8">
+                <h3 class="text-xl font-bold text-blue-400 mb-4 border-b border-gray-700 pb-3">ثبت / ویرایش برنامه زمان‌بندی</h3>
+                <input type="hidden" id="tt-id">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div><label class="block text-sm mb-1">عنوان برنامه / گروه</label><input type="text" id="tt-title"></div>
+                    <div>
+                        <label class="block text-sm mb-1">نوع</label>
+                        <select id="tt-type">
+                            <option value="تمرین">تمرین</option>
+                            <option value="جلسه">جلسه</option>
+                            <option value="اجرا">اجرا</option>
+                            <option value="تدارکات">تدارکات / نصب</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1">فضا / مکان</label>
+                        <select id="tt-location">
+                            <option value="همکف">طبقه همکف</option>
+                            <option value="طبقه اول">طبقه اول</option>
+                            <option value="زیرزمین">زیرزمین</option>
+                        </select>
+                    </div>
+                    <div><label class="block text-sm mb-1">شروع (تاریخ و ساعت)</label><input type="datetime-local" id="tt-start"></div>
+                    <div><label class="block text-sm mb-1">پایان (تاریخ و ساعت)</label><input type="datetime-local" id="tt-end"></div>
+                    <div>
+                        <label class="block text-sm mb-1">رنگ لیبل</label>
+                        <select id="tt-color">
+                            <option value="bg-blue-600">آبی</option>
+                            <option value="bg-green-600">سبز</option>
+                            <option value="bg-red-600">قرمز</option>
+                            <option value="bg-purple-600">بنفش</option>
+                            <option value="bg-yellow-600">زرد</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm mb-1 text-gray-300">صورت‌جلسه / یادداشت / ددلاین‌ها</label>
+                    <textarea id="tt-notes" rows="4" placeholder="نکات مهم این جلسه یا کارهایی که باید تا قبل از آن انجام شود..."></textarea>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="saveTimetable()" class="btn btn-primary">ثبت در تقویم</button>
+                    <button onclick="document.getElementById('timetable-editor').classList.add('hidden')" class="btn btn-secondary">انصراف</button>
+                    <button onclick="deleteTimetable()" id="btn-delete-tt" class="btn btn-danger hidden">حذف</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: EVENTS MANAGEMENT -->
+        <div id="tab-events" class="tab-content active">
+             <div class="flex justify-between items-center mb-6 no-print">
+                <h2 class="text-2xl font-bold">مدیریت مالی رویدادها</h2>
+                <button onclick="openEventEditor()" class="btn btn-primary admin-only">+ رویداد جدید</button>
+            </div>
+            
+            <div id="events-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 no-print mb-8"></div>
+
+            <div id="event-editor" class="bg-[#1e1e1e] p-6 rounded-lg border border-gray-800 hidden mt-6">
+                <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-4">
+                    <h3 class="text-xl font-bold text-red-400">تعریف رویداد / اجرای جدید</h3>
+                    <div class="flex gap-2">
+                        <button onclick="deleteCurrentEvent()" id="btn-delete-event" class="text-red-400 hover:text-white bg-red-900/30 px-3 py-1 rounded hidden admin-only">حذف رویداد</button>
+                        <button onclick="closeEventEditor()" class="text-gray-400 hover:text-white bg-gray-800 px-3 py-1 rounded">✕ بازگشت</button>
+                    </div>
+                </div>
+                <input type="hidden" id="event-id">
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 bg-[#252525] p-4 rounded-lg">
+                    <div class="lg:col-span-2"><label class="block text-sm mb-1">نام برنامه</label><input type="text" id="event-name"></div>
+                    <div>
+                        <label class="block text-sm mb-1">نوع برنامه</label>
+                        <select id="event-type">
+                            <option value="اجرا">اجرا</option>
+                            <option value="ورکشاپ">ورکشاپ</option>
+                            <option value="رویداد">رویداد</option>
+                        </select>
+                    </div>
+                    <div><label class="block text-sm mb-1">از تاریخ</label><input type="text" id="event-start-date" placeholder="1403/08/15"></div>
+                    <div><label class="block text-sm mb-1">تا تاریخ</label><input type="text" id="event-end-date" placeholder="1403/08/20"></div>
+                    <div>
+                        <label class="block text-sm mb-1">مدل فروش</label>
+                        <select id="event-pricing">
+                            <option value="fixed">بلیط ثابت</option>
+                            <option value="donation">دونیشن</option>
+                        </select>
+                    </div>
+                    <div class="lg:col-span-2">
+                        <label class="block text-sm mb-1 text-blue-300 font-bold">قیمت بلیط (تومان)</label>
+                        <input type="number" id="ticket-price" value="0" onkeyup="recalculateAllFixedPrices()">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-[#2a2a2a] p-4 rounded-lg lg:col-span-1 border border-red-900/30">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="font-bold text-red-400">خرج‌ها</h4>
+                            <button onclick="addExpenseRow()" class="text-xs bg-red-900/50 px-2 py-1 rounded">+ افزودن</button>
+                        </div>
+                        <table class="w-full text-sm mt-0"><tbody id="expenses-body"></tbody></table>
+                    </div>
+
+                    <div class="bg-[#2a2a2a] p-4 rounded-lg lg:col-span-2 border border-blue-900/30">
+                        <label class="block font-bold mb-2 text-blue-400">ادغام هوشمند و ورود سریع</label>
+                        <p class="text-xs text-gray-400 mb-2">اگر یک لیست اسم دارید و یک لیست شماره مجزا، هر دو را زیر هم پیست کنید. سیستم تلاش میکند به ترتیب نام‌ها، شماره‌های بدون صاحب را به آنها متصل کند.</p>
+                        <textarea id="fast-input" rows="5" class="w-full bg-[#1e1e1e] p-3 rounded text-sm" placeholder="علی رضایی
+سارا حسینی
+09123456789
+09351112233"></textarea>
+                        <button onclick="parseFastInput()" class="btn btn-secondary mt-3 w-full text-sm">پردازش و افزودن به لیست</button>
+                    </div>
+                </div>
+
+                <div class="bg-[#252525] p-4 rounded-lg border border-gray-700">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="font-bold text-lg text-white">مخاطبین این رویداد</h4>
+                        <button onclick="addAttendeeRow()" class="btn btn-secondary text-xs">+ افزودن دستی</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table id="attendees-table" class="mt-0 text-sm">
+                            <thead><tr><th>نام</th><th>شماره</th><th>آیدی</th><th>پرداختی</th><th>مهمان</th><th></th></tr></thead>
+                            <tbody id="attendees-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="mt-8 p-6 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl relative overflow-hidden">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                        <div class="bg-[#2a2a2a] p-4 rounded-lg"><span class="block text-sm text-gray-400">مخاطب</span><span class="font-bold text-xl text-white" id="summary-count">0</span></div>
+                        <div class="bg-[#2a2a2a] p-4 rounded-lg"><span class="block text-sm text-gray-400">درآمد</span><span class="font-bold text-xl text-blue-400" id="summary-income">0</span></div>
+                        <div class="bg-[#2a2a2a] p-4 rounded-lg"><span class="block text-sm text-gray-400">خرج‌ها</span><span class="font-bold text-xl text-red-400" id="summary-expenses">0</span></div>
+                        <div class="bg-green-900/10 p-4 rounded-lg border border-green-900/50"><span class="block text-sm text-gray-400">خالص</span><span class="font-bold text-xl text-green-400" id="summary-net">0</span></div>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex flex-col sm:flex-row gap-3 no-print">
+                    <button onclick="saveEvent()" class="btn btn-primary sm:flex-1 text-lg py-4 admin-only">ذخیره ابری رویداد</button>
+                    <button onclick="window.print()" class="btn btn-secondary sm:w-48">خروجی PDF</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: FINANCE DASHBOARD -->
+        <div id="tab-finance" class="tab-content">
+            <div class="flex justify-between items-center mb-6 no-print">
+                <h2 class="text-2xl font-bold">فایننس شیت جامع</h2>
+                <button onclick="window.print()" class="btn btn-secondary text-sm">چاپ / PDF</button>
+            </div>
+            <div class="overflow-x-auto bg-[#1e1e1e] rounded-lg border border-gray-800 p-2">
+                <table id="finance-table" class="mt-0 text-sm whitespace-nowrap">
+                    <thead>
+                        <tr><th>برنامه</th><th>نوع</th><th>تاریخ</th><th>مخاطب</th><th>درآمد</th><th>هزینه‌ها</th><th>خالص</th><th class="text-cyan-400">هنرمند (50%)</th><th class="text-yellow-400">مهلکه (25%)</th><th class="text-purple-400">عمارت (25%)</th></tr>
+                    </thead>
+                    <tbody id="finance-body"></tbody><tfoot class="bg-[#252525] font-bold text-base border-t-2 border-gray-600" id="finance-footer"></tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB: CRM (AUDIENCE DB) -->
+        <div id="tab-crm" class="tab-content">
+            <div class="flex justify-between items-center mb-6 no-print">
+                <h2 class="text-2xl font-bold">بانک اطلاعات مخاطبین</h2>
+                <button onclick="window.print()" class="btn btn-secondary text-sm">چاپ / PDF</button>
+            </div>
+            <div class="bg-[#1e1e1e] rounded-lg border border-gray-800 p-2 overflow-x-auto">
+                <table id="crm-table" class="mt-0">
+                    <thead><tr><th>نام</th><th>شماره تماس</th><th>آیدی تلگرام</th><th>دفعات شرکت</th><th>مجموع پرداختی</th></tr></thead>
+                    <tbody id="crm-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP SCRIPT -->
+    <script>
+        // =========================================================================
+        // تنظیمات سوپابیس و ایمیل‌های واقعی
+        // =========================================================================
+        const SUPABASE_URL = 'https://nazzgnwrcgbujjeduekt.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_mrdGo65KhTDdIR7vLsYufQ_JjOfoan3';
+        
+        // ایمیل واقعی شما قرار داده شد.
+        // سایر ایمیل‌ها را نیز می‌توانید بعداً جایگزین کنید تا دکمه‌های مربوط به هر نفر کار کنند.
+        const REAL_EMAILS = {
+            'amirhsn': 'ahsh.architect@gmail.com',
+            'mohsenxedri': 'ایمیل_واقعی_محسن@gmail.com',
+            'morebakhtiar': 'ایمیل_واقعی_موربختیار@gmail.com',
+            'benyamin': 'ایمیل_واقعی_بنیامین@gmail.com'
+        };
+        // =========================================================================
+        
+        let supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentUser = null;
+        let currentRole = 'viewer';
+        let cloudEvents = [];
+        let cloudTimetable = [];
+        let selectedUsername = null; 
+
+        function showLoader() { document.getElementById('loader').style.display = 'flex'; }
+        function hideLoader() { document.getElementById('loader').style.display = 'none'; }
+
+        /* ================= AUTHENTICATION UI ================= */
+        
+        function selectUser(username) {
+            selectedUsername = username;
+            
+            document.querySelectorAll('.user-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            document.getElementById('user-' + username).classList.add('selected');
+            
+            const passContainer = document.getElementById('password-container');
+            passContainer.classList.remove('hidden');
+            setTimeout(() => { passContainer.classList.remove('opacity-0'); }, 10);
+            
+            document.getElementById('password-label').innerText = `رمز عبور ${username} را وارد کنید`;
+            document.getElementById('login-password').value = '';
+            document.getElementById('login-password').focus();
+            
+            document.getElementById('login-btn').classList.remove('disabled-action');
+        }
+
+        function togglePassword() {
+            const passInput = document.getElementById('login-password');
+            const eyeIcon = document.getElementById('eye-icon');
+            
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                eyeIcon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+            } else {
+                passInput.type = 'password';
+                eyeIcon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+            }
+        }
+
+        async function resetPassword() {
+            if(!selectedUsername) return alert('لطفاً ابتدا نام کاربری خود را انتخاب کنید.');
+            const email = REAL_EMAILS[selectedUsername];
+            if(!email || email.includes('ایمیل_واقعی')) {
+                alert('ایمیل‌های واقعی هنوز در کدهای برنامه وارد نشده‌اند.');
+                return;
+            }
+            
+            if(confirm(`لینک تغییر رمز عبور به ایمیل ${email} ارسال خواهد شد. موافقید؟`)) {
+                showLoader();
+                try {
+                    const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email);
+                    if(error) throw error;
+                    alert('لینک بازیابی ارسال شد. لطفاً صندوق ایمیل خود را چک کنید.');
+                } catch(err) {
+                    alert("خطا در ارسال ایمیل: " + err.message);
+                } finally {
+                    hideLoader();
+                }
+            }
+        }
+
+        async function checkSession() {
+            showLoader();
+            try {
+                const { data, error } = await supabaseClient.auth.getSession();
+                if (error) throw error;
+
+                if (data.session) {
+                    currentUser = data.session.user;
+                    await fetchUserProfile(currentUser.id);
+                    document.getElementById('auth-section').classList.add('hidden');
+                    document.getElementById('main-dashboard').classList.remove('hidden');
+                    
+                    // پیدا کردن نام کاربری بر اساس ایمیل
+                    let displayUsername = currentUser.email;
+                    for (const [user, mail] of Object.entries(REAL_EMAILS)) {
+                        if (mail.toLowerCase() === currentUser.email.toLowerCase()) {
+                            displayUsername = user;
+                            break;
+                        }
+                    }
+                    document.getElementById('user-display').innerText = displayUsername;
+                    
+                    await loadAllData();
+                } else {
+                    document.getElementById('auth-section').classList.remove('hidden');
+                    document.getElementById('main-dashboard').classList.add('hidden');
+                }
+            } catch (err) {
+                console.error(err);
+                alert("خطا در ارتباط با سرور ابری:\n" + err.message + "\nاحتمالاً به دلیل اختلال اینترنت یا روشن نبودن فیلترشکن است.");
+                document.getElementById('auth-section').classList.remove('hidden');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        async function fetchUserProfile(userId) {
+            try {
+                const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', userId).single();
+                if (data) currentRole = data.role || 'viewer';
+                
+                const roleBadge = document.getElementById('role-badge');
+                if (currentRole === 'admin') {
+                    roleBadge.innerText = 'ادمین';
+                    roleBadge.className = 'px-2 py-1 rounded text-xs bg-red-600 text-white';
+                    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'inline-block');
+                } else {
+                    roleBadge.innerText = 'مشاهده‌گر';
+                    roleBadge.className = 'px-2 py-1 rounded text-xs bg-gray-600 text-white';
+                    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+                }
+            } catch (err) {
+                console.error("Profile fetch error:", err);
+            }
+        }
+
+        async function handleLogin() {
+            if(!selectedUsername) return alert('لطفاً ابتدا نام کاربری خود را از لیست انتخاب کنید.');
+            
+            const email = REAL_EMAILS[selectedUsername];
+            if(!email || email.includes('ایمیل_واقعی')) {
+                alert('خطا: لطفاً ابتدا فایل کد را ویرایش کرده و ایمیل‌های واقعی خود را در بخش REAL_EMAILS وارد کنید.');
+                return;
+            }
+
+            const password = document.getElementById('login-password').value;
+            if(!password) return alert('لطفاً رمز عبور را وارد کنید.');
+
+            showLoader();
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                checkSession();
+            } catch (err) {
+                const errEl = document.getElementById('auth-error');
+                if (err.message.includes('fetch')) {
+                    errEl.innerText = "ارتباط با سرور قطع است. (فیلترشکن را بررسی کنید)";
+                } else {
+                    errEl.innerText = "رمز عبور اشتباه است.";
+                }
+                errEl.classList.remove('hidden');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            location.reload();
+        }
+
+        /* ================= LOAD DATA ================= */
+        async function loadAllData() {
+            showLoader();
+            try {
+                const { data: eventsData, error: eErr } = await supabaseClient.from('events').select('*, expenses(*), attendees(*)').order('created_at', { ascending: false });
+                if(eErr) throw eErr;
+                cloudEvents = eventsData || [];
+                
+                const { data: ttData, error: tErr } = await supabaseClient.from('timetable').select('*').order('start_time', { ascending: true });
+                if(tErr) throw tErr;
+                cloudTimetable = ttData || [];
+                
+                switchTab('tab-timetable');
+            } catch (err) {
+                console.error(err);
+                alert("خطا در دریافت اطلاعات جداول:\n" + err.message);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            
+            document.querySelectorAll('nav button').forEach(b => {
+                b.classList.remove('btn-primary'); b.classList.add('btn-secondary');
+            });
+            document.getElementById('nav-' + tabId.replace('tab-', '')).classList.remove('btn-secondary');
+            document.getElementById('nav-' + tabId.replace('tab-', '')).classList.add('btn-primary');
+
+            if(tabId === 'tab-events') renderEventsList();
+            if(tabId === 'tab-finance') renderFinanceTab();
+            if(tabId === 'tab-crm') renderCrmTab();
+            if(tabId === 'tab-timetable') renderTimetable();
+        }
+
+        /* ================= TIMETABLE ================= */
+        function renderTimetable() {
+            const list = document.getElementById('timetable-list');
+            list.innerHTML = '';
+            if(cloudTimetable.length === 0) {
+                list.innerHTML = '<p class="text-gray-500 col-span-full">برنامه‌ای ثبت نشده است.</p>'; return;
+            }
+            cloudTimetable.forEach(item => {
+                const sDate = new Date(item.start_time);
+                const isPassed = sDate < new Date() ? 'opacity-50' : '';
+                const pDate = new Intl.DateTimeFormat('fa-IR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(sDate);
+                
+                list.innerHTML += `
+                    <div class="${item.color} p-4 rounded-lg shadow-lg cursor-pointer ${isPassed} hover:opacity-100 transition" onclick="editTimetable(${item.id})">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="bg-black/30 px-2 py-1 rounded text-xs text-white">${item.type} | ${item.location}</span>
+                        </div>
+                        <h4 class="font-bold text-xl text-white mb-2">${item.title}</h4>
+                        <p class="text-sm text-gray-200 mb-2">زمان: ${pDate}</p>
+                        ${item.notes ? `<p class="text-xs text-white/70 mt-2 border-t border-white/20 pt-2 truncate">${item.notes}</p>` : ''}
+                    </div>
+                `;
+            });
+        }
+
+        function openTimetableEditor() {
+            if(currentRole !== 'admin') return alert('شما دسترسی ایجاد ندارید');
+            document.getElementById('tt-id').value = '';
+            document.getElementById('tt-title').value = '';
+            document.getElementById('tt-notes').value = '';
+            document.getElementById('btn-delete-tt').classList.add('hidden');
+            document.getElementById('timetable-editor').classList.remove('hidden');
+        }
+
+        function editTimetable(id) {
+            const item = cloudTimetable.find(t => t.id === id);
+            if(!item) return;
+            document.getElementById('tt-id').value = item.id;
+            document.getElementById('tt-title').value = item.title;
+            document.getElementById('tt-type').value = item.type;
+            document.getElementById('tt-location').value = item.location;
+            document.getElementById('tt-color').value = item.color;
+            document.getElementById('tt-notes').value = item.notes || '';
+            
+            if(item.start_time) document.getElementById('tt-start').value = item.start_time.slice(0,16);
+            if(item.end_time) document.getElementById('tt-end').value = item.end_time.slice(0,16);
+            
+            if(currentRole === 'admin') document.getElementById('btn-delete-tt').classList.remove('hidden');
+            document.getElementById('timetable-editor').classList.remove('hidden');
+        }
+
+        async function saveTimetable() {
+            if(currentRole !== 'admin') return;
+            const id = document.getElementById('tt-id').value;
+            const payload = {
+                title: document.getElementById('tt-title').value,
+                type: document.getElementById('tt-type').value,
+                location: document.getElementById('tt-location').value,
+                color: document.getElementById('tt-color').value,
+                notes: document.getElementById('tt-notes').value,
+                start_time: document.getElementById('tt-start').value || null,
+                end_time: document.getElementById('tt-end').value || null
+            };
+            
+            showLoader();
+            try {
+                if(id) await supabaseClient.from('timetable').update(payload).eq('id', id);
+                else await supabaseClient.from('timetable').insert([payload]);
+                await loadAllData(); 
+                document.getElementById('timetable-editor').classList.add('hidden');
+            } catch (err) {
+                alert("خطا در ذخیره:\n" + err.message);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        async function deleteTimetable() {
+            if(currentRole !== 'admin') return;
+            const id = document.getElementById('tt-id').value;
+            if(confirm('حذف شود؟')) {
+                showLoader();
+                try {
+                    await supabaseClient.from('timetable').delete().eq('id', id);
+                    await loadAllData();
+                    document.getElementById('timetable-editor').classList.add('hidden');
+                } catch (err) {
+                    alert("خطا در حذف:\n" + err.message);
+                } finally {
+                    hideLoader();
+                }
+            }
+        }
+
+        /* ================= EVENTS & FINANCE ================= */
+        function toEnglishDigits(str) {
+            const persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+            const arabicNumbers  = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+            if(!str) return str;
+            return str.replace(/[۰-۹]/g, w => persianNumbers.indexOf(w)).replace(/[٠-٩]/g, w => arabicNumbers.indexOf(w));
+        }
+
+        function renderEventsList() {
+            const list = document.getElementById('events-list');
+            list.innerHTML = '';
+            cloudEvents.forEach(ev => {
+                const totalExp = (ev.expenses || []).reduce((sum, item) => sum + item.amount, 0);
+                const totalIncome = (ev.attendees || []).reduce((sum, item) => sum + item.paid, 0);
+                const net = totalIncome - totalExp;
+                
+                list.innerHTML += `
+                    <div class="bg-[#1e1e1e] p-5 rounded-lg border border-gray-700 hover:border-red-500 cursor-pointer transition shadow-lg" onclick="editEvent(${ev.id})">
+                        <div class="flex justify-between items-start mb-3">
+                            <h4 class="font-bold text-lg text-white truncate pr-2">${ev.name || 'بدون نام'}</h4>
+                            <span class="text-xs bg-blue-900/50 text-blue-300 px-2 py-1 rounded whitespace-nowrap">${ev.type}</span>
+                        </div>
+                        <div class="flex items-center text-xs text-gray-400 mb-4 gap-3">
+                            <span>📅 ${ev.start_date || '-'}</span>
+                        </div>
+                        <div class="flex justify-between items-end pt-3 border-t border-gray-800">
+                            <span class="text-sm text-gray-400">👥 ${(ev.attendees || []).length} نفر</span>
+                            <div class="text-left">
+                                <span class="block text-xs text-gray-500 mb-1">سود خالص</span>
+                                <span class="${net >= 0 ? 'text-green-400' : 'text-red-400'} font-bold text-lg" dir="ltr">${net.toLocaleString()} T</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function openEventEditor() {
+            if(currentRole !== 'admin') return alert('شما دسترسی ایجاد ندارید');
+            document.getElementById('event-id').value = ''; document.getElementById('event-name').value = '';
+            document.getElementById('event-start-date').value = ''; document.getElementById('event-end-date').value = '';
+            document.getElementById('expenses-body').innerHTML = ''; document.getElementById('attendees-body').innerHTML = '';
+            document.getElementById('btn-delete-event').classList.add('hidden');
+            document.getElementById('events-list').classList.add('hidden');
+            document.getElementById('event-editor').classList.remove('hidden');
+            updateEventSummary();
+        }
+
+        function editEvent(id) {
+            const ev = cloudEvents.find(e => e.id === id);
+            if(!ev) return;
+            document.getElementById('event-id').value = ev.id;
+            document.getElementById('event-name').value = ev.name;
+            document.getElementById('event-type').value = ev.type || 'اجرا';
+            document.getElementById('event-start-date').value = ev.start_date || '';
+            document.getElementById('event-end-date').value = ev.end_date || '';
+            document.getElementById('event-pricing').value = ev.pricing_model || 'fixed';
+            document.getElementById('ticket-price').value = ev.ticket_price || 0;
+            
+            const expBody = document.getElementById('expenses-body'); expBody.innerHTML = '';
+            (ev.expenses || []).forEach(exp => addExpenseRow(exp.description, exp.amount));
+
+            const attBody = document.getElementById('attendees-body'); attBody.innerHTML = '';
+            (ev.attendees || []).forEach(a => addAttendeeRow(a));
+            
+            if(currentRole === 'admin') document.getElementById('btn-delete-event').classList.remove('hidden');
+            document.getElementById('events-list').classList.add('hidden');
+            document.getElementById('event-editor').classList.remove('hidden');
+            updateEventSummary();
+        }
+
+        function closeEventEditor() {
+            document.getElementById('event-editor').classList.add('hidden');
+            document.getElementById('events-list').classList.remove('hidden');
+            renderEventsList();
+        }
+
+        function addExpenseRow(desc = '', amount = 0) {
+            const tbody = document.getElementById('expenses-body');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="p-1"><input type="text" class="exp-desc text-xs" value="${desc}" placeholder="عنوان"></td>
+                <td class="p-1"><input type="number" class="exp-amount text-xs" value="${amount}" onkeyup="updateEventSummary()" onchange="updateEventSummary()"></td>
+                <td class="p-1 text-center"><button onclick="this.closest('tr').remove(); updateEventSummary();" class="text-red-500 hover:text-red-300 font-bold">×</button></td>
+            `;
+            tbody.appendChild(tr);
+            updateEventSummary();
+        }
+
+        function addAttendeeRow(data = {}) {
+            const tbody = document.getElementById('attendees-body');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="p-1"><input type="text" class="att-name text-sm" value="${data.name || ''}" onkeyup="updateEventSummary()" onchange="updateEventSummary()"></td>
+                <td class="p-1"><input type="text" class="att-phone text-sm" value="${data.phone || ''}" dir="ltr"></td>
+                <td class="p-1"><input type="text" class="att-tg text-sm" value="${data.telegram || ''}" dir="ltr"></td>
+                <td class="p-1"><input type="number" class="att-paid text-sm" value="${data.paid || 0}" ${data.isGuest ? 'disabled' : ''} onkeyup="updateEventSummary()" onchange="updateEventSummary()"></td>
+                <td class="p-1 text-center"><input type="checkbox" class="att-guest w-4 h-4" ${data.isGuest ? 'checked' : ''} onchange="toggleGuest(this)"></td>
+                <td class="p-1 text-center"><button onclick="this.closest('tr').remove(); updateEventSummary();" class="text-red-500 hover:text-red-300 font-bold">×</button></td>
+            `;
+            tbody.appendChild(tr);
+            updateEventSummary();
+        }
+
+        function toggleGuest(checkbox) {
+            const tr = checkbox.closest('tr');
+            const paidInput = tr.querySelector('.att-paid');
+            if(checkbox.checked) { paidInput.value = 0; paidInput.disabled = true; } 
+            else {
+                const pricing = document.getElementById('event-pricing').value;
+                if(pricing === 'fixed') { paidInput.value = document.getElementById('ticket-price').value || 0; }
+                paidInput.disabled = false;
+            }
+            updateEventSummary();
+        }
+
+        function recalculateAllFixedPrices() {
+            const pricingModel = document.getElementById('event-pricing').value;
+            const standardPrice = parseInt(document.getElementById('ticket-price').value) || 0;
+            if(pricingModel === 'fixed') {
+                document.querySelectorAll('#attendees-body tr').forEach(tr => {
+                    const isGuest = tr.querySelector('.att-guest').checked;
+                    if(!isGuest) { tr.querySelector('.att-paid').value = standardPrice; }
+                });
+                updateEventSummary();
+            }
+        }
+
+        function parseFastInput() {
+            const rawText = toEnglishDigits(document.getElementById('fast-input').value);
+            const lines = rawText.split('\n').map(l => l.trim()).filter(l => l);
+            const pricing = document.getElementById('event-pricing').value;
+            const standardPrice = parseInt(document.getElementById('ticket-price').value) || 0;
+
+            let namesList = []; let orphansList = []; 
+
+            lines.forEach(line => {
+                let phoneMatch = line.match(/(09\d{9})/);
+                let tgMatch = line.match(/@[a-zA-Z0-9_]+/);
+                let isGuest = /مهمان|رایگان|guest/i.test(line);
+                let customPrice = 0;
+                
+                const numMatch = line.match(/\b\d{4,}\b/g); 
+                if (numMatch && !isGuest) { customPrice = parseInt(numMatch[numMatch.length - 1]); }
+
+                let phone = phoneMatch ? phoneMatch[0] : '';
+                let tg = tgMatch ? tgMatch[0] : '';
+
+                let name = line;
+                if(phone) name = name.replace(phone, '');
+                if(tg) name = name.replace(tg, '');
+                if(numMatch) numMatch.forEach(n => name = name.replace(n, ''));
+                name = name.replace(/مهمان|رایگان|guest/gi, '').replace(/[()-]/g, '').trim();
+
+                if (name.length > 0) {
+                    namesList.push({ name, phone, telegram: tg, paid: isGuest ? 0 : (pricing === 'fixed' ? standardPrice : customPrice), isGuest });
+                } else if (phone || tg || isGuest || customPrice) {
+                    orphansList.push({ phone, telegram: tg, isGuest, customPrice });
+                }
+            });
+
+            let orphanIndex = 0;
+            namesList.forEach(att => {
+                if(!att.phone && orphanIndex < orphansList.length) {
+                    const o = orphansList[orphanIndex];
+                    if(o.phone) att.phone = o.phone;
+                    if(o.telegram) att.telegram = o.telegram;
+                    if(o.isGuest) { att.isGuest = true; att.paid = 0; }
+                    if(o.customPrice && !att.isGuest && pricing === 'donation') att.paid = o.customPrice;
+                    orphanIndex++;
+                }
+            });
+
+            namesList.forEach(a => addAttendeeRow(a));
+            for(let i=orphanIndex; i<orphansList.length; i++) {
+                let o = orphansList[i];
+                addAttendeeRow({ name: 'ناشناس', phone: o.phone, telegram: o.telegram, isGuest: o.isGuest, paid: o.customPrice || 0});
+            }
+            document.getElementById('fast-input').value = '';
+            updateEventSummary();
+        }
+
+        function updateEventSummary() {
+            let expenses = 0;
+            document.querySelectorAll('.exp-amount').forEach(el => { expenses += (parseInt(el.value) || 0); });
+            
+            let income = 0; let count = 0;
+            document.querySelectorAll('#attendees-body tr').forEach(tr => {
+                income += (parseInt(tr.querySelector('.att-paid').value) || 0);
+                count++;
+            });
+            
+            const net = income - expenses;
+            document.getElementById('summary-count').innerText = count;
+            document.getElementById('summary-income').innerText = income.toLocaleString();
+            document.getElementById('summary-expenses').innerText = expenses.toLocaleString();
+            document.getElementById('summary-net').innerText = net.toLocaleString();
+        }
+
+        async function saveEvent() {
+            if(currentRole !== 'admin') return;
+            const eventIdStr = document.getElementById('event-id').value;
+            const isNew = !eventIdStr;
+            
+            const eventPayload = {
+                name: document.getElementById('event-name').value || 'برنامه',
+                type: document.getElementById('event-type').value,
+                start_date: document.getElementById('event-start-date').value,
+                end_date: document.getElementById('event-end-date').value,
+                pricing_model: document.getElementById('event-pricing').value,
+                ticket_price: parseInt(document.getElementById('ticket-price').value) || 0
+            };
+
+            showLoader();
+            try {
+                let finalEventId = eventIdStr;
+
+                if(isNew) {
+                    const { data, error } = await supabaseClient.from('events').insert([eventPayload]).select();
+                    if(error) throw error;
+                    finalEventId = data[0].id;
+                } else {
+                    const {error: e1} = await supabaseClient.from('events').update(eventPayload).eq('id', finalEventId);
+                    if(e1) throw e1;
+                    await supabaseClient.from('expenses').delete().eq('event_id', finalEventId);
+                    await supabaseClient.from('attendees').delete().eq('event_id', finalEventId);
+                }
+
+                let expensesList = [];
+                document.querySelectorAll('#expenses-body tr').forEach(tr => {
+                    const desc = tr.querySelector('.exp-desc').value.trim();
+                    const amount = parseInt(tr.querySelector('.exp-amount').value) || 0;
+                    if (desc || amount > 0) expensesList.push({ event_id: finalEventId, description: desc, amount: amount });
+                });
+                if(expensesList.length > 0) {
+                    const {error: e2} = await supabaseClient.from('expenses').insert(expensesList);
+                    if(e2) throw e2;
+                }
+
+                let attendeesList = [];
+                document.querySelectorAll('#attendees-body tr').forEach(tr => {
+                    const name = tr.querySelector('.att-name').value.trim();
+                    if (name) {
+                        attendeesList.push({
+                            event_id: finalEventId,
+                            name: name,
+                            phone: tr.querySelector('.att-phone').value.trim(),
+                            telegram: tr.querySelector('.att-tg').value.trim(),
+                            paid: parseInt(tr.querySelector('.att-paid').value) || 0,
+                            is_guest: tr.querySelector('.att-guest').checked
+                        });
+                    }
+                });
+                if(attendeesList.length > 0) {
+                    const {error: e3} = await supabaseClient.from('attendees').insert(attendeesList);
+                    if(e3) throw e3;
+                }
+
+                await loadAllData();
+                closeEventEditor();
+            } catch (err) {
+                alert("خطا در ذخیره رویداد:\n" + err.message);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        async function deleteCurrentEvent() {
+            if(currentRole !== 'admin') return;
+            if(confirm('آیا از حذف این رویداد مطمئن هستید؟')) {
+                showLoader();
+                try {
+                    const id = document.getElementById('event-id').value;
+                    await supabaseClient.from('events').delete().eq('id', id);
+                    await loadAllData();
+                    closeEventEditor();
+                } catch (err) {
+                    alert("خطا در حذف:\n" + err.message);
+                } finally {
+                    hideLoader();
+                }
+            }
+        }
+
+        /* ================= FINANCE ================= */
+        function renderFinanceTab() {
+            const tbody = document.getElementById('finance-body');
+            const tfoot = document.getElementById('finance-footer');
+            tbody.innerHTML = '';
+            
+            let totInc = 0, totExp = 0, totNet = 0, totArt = 0, totMah = 0, totEma = 0, totAtt = 0;
+
+            cloudEvents.forEach(ev => {
+                const evExpenses = (ev.expenses || []).reduce((sum, item) => sum + item.amount, 0);
+                const evIncome = (ev.attendees || []).reduce((sum, item) => sum + item.paid, 0);
+                const net = evIncome - evExpenses;
+                const art = net * 0.5; const mah = net * 0.25; const ema = net * 0.25;
+                const attendeesCount = (ev.attendees || []).length;
+                
+                totInc += evIncome; totExp += evExpenses; totNet += net;
+                totArt += art; totMah += mah; totEma += ema; totAtt += attendeesCount;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="font-bold text-white">${ev.name || '-'}</td>
+                        <td class="text-gray-400">${ev.type}</td>
+                        <td dir="ltr" class="text-right text-xs">${ev.start_date || ''}</td>
+                        <td>${attendeesCount}</td>
+                        <td>${evIncome.toLocaleString()}</td>
+                        <td class="text-red-400">${evExpenses.toLocaleString()}</td>
+                        <td class="text-green-400 font-bold">${net.toLocaleString()}</td>
+                        <td class="text-cyan-200">${art.toLocaleString()}</td>
+                        <td class="text-yellow-200">${mah.toLocaleString()}</td>
+                        <td class="text-purple-200">${ema.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+
+            tfoot.innerHTML = `
+                <tr>
+                    <td colspan="3" class="text-left text-gray-300">مجموع:</td>
+                    <td class="text-white">${totAtt}</td>
+                    <td class="text-blue-400">${totInc.toLocaleString()}</td>
+                    <td class="text-red-400">${totExp.toLocaleString()}</td>
+                    <td class="text-green-500 text-lg">${totNet.toLocaleString()}</td>
+                    <td class="text-cyan-400">${totArt.toLocaleString()}</td>
+                    <td class="text-yellow-400">${totMah.toLocaleString()}</td>
+                    <td class="text-purple-400">${totEma.toLocaleString()}</td>
+                </tr>
+            `;
+        }
+
+        /* ================= CRM ================= */
+        function renderCrmTab() {
+            const tbody = document.getElementById('crm-body');
+            tbody.innerHTML = '';
+            
+            const db = {};
+            cloudEvents.forEach(ev => {
+                (ev.attendees || []).forEach(a => {
+                    if(!a.name && !a.phone) return;
+                    const key = a.phone || a.name; 
+                    if(!db[key]) { db[key] = { name: a.name, phone: a.phone, telegram: a.telegram, count: 0, totalPaid: 0 }; }
+                    db[key].count += 1; db[key].totalPaid += a.paid;
+                    if(!db[key].phone && a.phone) db[key].phone = a.phone;
+                    if(!db[key].telegram && a.telegram) db[key].telegram = a.telegram;
+                });
+            });
+
+            const sortedAudience = Object.values(db).sort((a,b) => b.count - a.count);
+            sortedAudience.forEach(u => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-[#252525]">
+                        <td class="font-bold text-gray-200">${u.name}</td>
+                        <td dir="ltr" class="text-right text-gray-300">${u.phone || '-'}</td>
+                        <td dir="ltr" class="text-right text-blue-400">${u.telegram || '-'}</td>
+                        <td class="text-center font-bold text-yellow-500 text-lg">${u.count}</td>
+                        <td class="text-green-300">${u.totalPaid.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            checkSession();
+        });
+    </script>
+</body>
+</html>
