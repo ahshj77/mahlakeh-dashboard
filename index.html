@@ -4,20 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>داشبورد گریز به مهلکه | Cloud</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS for Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Vazirmatn Font -->
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <style>
         body { font-family: 'Vazirmatn', sans-serif; background-color: #121212; color: #e0e0e0; }
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
         table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
         th, td { border: 1px solid #333; padding: 0.75rem; text-align: right; }
         th { background-color: #1e1e1e; font-weight: bold; color: #fff; }
@@ -26,7 +21,6 @@
             background-color: #2a2a2a; border: 1px solid #444; color: white; padding: 0.5rem; border-radius: 4px; width: 100%;
         }
         input:focus, select:focus, textarea:focus { outline: none; border-color: #ef4444; }
-        
         .btn { padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s; text-align: center; }
         .btn-primary { background-color: #ef4444; color: white; }
         .btn-primary:hover { background-color: #dc2626; }
@@ -34,10 +28,8 @@
         .btn-secondary:hover { background-color: #4b5563; }
         .btn-danger { background-color: #b91c1c; color: white; }
         .btn-danger:hover { background-color: #991b1b; }
-        
         .disabled-action { opacity: 0.5; pointer-events: none; }
         
-        /* Users Grid Styles */
         .user-card { background-color: #2a2a2a; border: 2px solid #444; border-radius: 8px; padding: 1rem; text-align: center; cursor: pointer; transition: all 0.2s; }
         .user-card:hover { border-color: #ef4444; background-color: #333; }
         .user-card.selected { border-color: #ef4444; background-color: #ef4444; color: white; transform: scale(1.05); }
@@ -51,7 +43,6 @@
             tr:nth-child(even) { background-color: #f9fafb; }
         }
 
-        /* Loading Overlay */
         #loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
         .spinner { width: 50px; height: 50px; border: 5px solid #333; border-top-color: #ef4444; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -59,30 +50,18 @@
 </head>
 <body class="p-4 md:p-8">
 
-    <!-- Loading Spinner -->
     <div id="loader"><div class="spinner"></div><p class="mt-4 text-white">در حال ارتباط با سرور ابری...</p></div>
 
-    <!-- Auth Section -->
     <div id="auth-section" class="max-w-lg mx-auto mt-12 bg-[#1e1e1e] p-8 rounded-lg border border-gray-800 shadow-xl">
         <h2 class="text-3xl font-bold text-red-500 mb-2 text-center">عمارت ما</h2>
         <p class="text-gray-400 text-center mb-8 text-sm">داشبورد گریز به مهلکه</p>
-        
         <p class="text-sm mb-3 text-center text-gray-300">نام کاربری خود را انتخاب کنید:</p>
         
-        <!-- User Selection Grid -->
         <div class="grid grid-cols-2 gap-4 mb-8">
-            <div class="user-card" onclick="selectUser('amirhsn')" id="user-amirhsn">
-                <span class="block font-bold">amirhsn</span>
-            </div>
-            <div class="user-card" onclick="selectUser('mohsenxedri')" id="user-mohsenxedri">
-                <span class="block font-bold">mohsenxedri</span>
-            </div>
-            <div class="user-card" onclick="selectUser('morebakhtiar')" id="user-morebakhtiar">
-                <span class="block font-bold">morebakhtiar</span>
-            </div>
-            <div class="user-card" onclick="selectUser('benyamin')" id="user-benyamin">
-                <span class="block font-bold">benyamin</span>
-            </div>
+            <div class="user-card" onclick="selectUser('amirhsnsh')" id="user-amirhsnsh"><span class="block font-bold">amirhsnsh</span></div>
+            <div class="user-card" onclick="selectUser('mohsenxedri')" id="user-mohsenxedri"><span class="block font-bold">mohsenxedri</span></div>
+            <div class="user-card" onclick="selectUser('morebakhtiar')" id="user-morebakhtiar"><span class="block font-bold">morebakhtiar</span></div>
+            <div class="user-card" onclick="selectUser('benyamin')" id="user-benyamin"><span class="block font-bold">benyamin</span></div>
         </div>
 
         <div id="password-container" class="mb-8 hidden opacity-0 transition-opacity duration-300">
@@ -99,10 +78,7 @@
         <p id="auth-error" class="text-red-400 text-sm mt-4 text-center hidden"></p>
     </div>
 
-    <!-- Main Dashboard -->
     <div id="main-dashboard" class="max-w-7xl mx-auto hidden">
-        
-        <!-- Header & Nav -->
         <header class="flex flex-col md:flex-row justify-between items-center mb-8 border-b border-gray-800 pb-4 no-print gap-4">
             <div>
                 <h1 class="text-3xl font-bold text-red-500">داشبورد گریز به مهلکه</h1>
@@ -125,19 +101,12 @@
             <button onclick="switchTab('tab-crm')" class="btn btn-secondary whitespace-nowrap" id="nav-crm">بانک مخاطبین</button>
         </nav>
 
-        <!-- TAB: TIMETABLE & SPACES -->
         <div id="tab-timetable" class="tab-content">
             <div class="flex justify-between items-center mb-6 no-print">
                 <h2 class="text-2xl font-bold">تقویم رویدادها، تمرین‌ها و جلسات</h2>
                 <button onclick="openTimetableEditor()" class="btn btn-primary admin-only">+ ثبت برنامه جدید</button>
             </div>
-
-            <!-- Timetable List -->
-            <div id="timetable-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                <!-- Populated by JS -->
-            </div>
-
-            <!-- Timetable Editor -->
+            <div id="timetable-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8"></div>
             <div id="timetable-editor" class="bg-[#1e1e1e] p-6 rounded-lg border border-gray-800 hidden mb-8">
                 <h3 class="text-xl font-bold text-blue-400 mb-4 border-b border-gray-700 pb-3">ثبت / ویرایش برنامه زمان‌بندی</h3>
                 <input type="hidden" id="tt-id">
@@ -145,32 +114,17 @@
                     <div><label class="block text-sm mb-1">عنوان برنامه / گروه</label><input type="text" id="tt-title"></div>
                     <div>
                         <label class="block text-sm mb-1">نوع</label>
-                        <select id="tt-type">
-                            <option value="تمرین">تمرین</option>
-                            <option value="جلسه">جلسه</option>
-                            <option value="اجرا">اجرا</option>
-                            <option value="تدارکات">تدارکات / نصب</option>
-                        </select>
+                        <select id="tt-type"><option value="تمرین">تمرین</option><option value="جلسه">جلسه</option><option value="اجرا">اجرا</option><option value="تدارکات">تدارکات / نصب</option></select>
                     </div>
                     <div>
                         <label class="block text-sm mb-1">فضا / مکان</label>
-                        <select id="tt-location">
-                            <option value="همکف">طبقه همکف</option>
-                            <option value="طبقه اول">طبقه اول</option>
-                            <option value="زیرزمین">زیرزمین</option>
-                        </select>
+                        <select id="tt-location"><option value="همکف">طبقه همکف</option><option value="طبقه اول">طبقه اول</option><option value="زیرزمین">زیرزمین</option></select>
                     </div>
                     <div><label class="block text-sm mb-1">شروع (تاریخ و ساعت)</label><input type="datetime-local" id="tt-start"></div>
                     <div><label class="block text-sm mb-1">پایان (تاریخ و ساعت)</label><input type="datetime-local" id="tt-end"></div>
                     <div>
                         <label class="block text-sm mb-1">رنگ لیبل</label>
-                        <select id="tt-color">
-                            <option value="bg-blue-600">آبی</option>
-                            <option value="bg-green-600">سبز</option>
-                            <option value="bg-red-600">قرمز</option>
-                            <option value="bg-purple-600">بنفش</option>
-                            <option value="bg-yellow-600">زرد</option>
-                        </select>
+                        <select id="tt-color"><option value="bg-blue-600">آبی</option><option value="bg-green-600">سبز</option><option value="bg-red-600">قرمز</option><option value="bg-purple-600">بنفش</option><option value="bg-yellow-600">زرد</option></select>
                     </div>
                 </div>
                 <div class="mb-4">
@@ -185,15 +139,12 @@
             </div>
         </div>
 
-        <!-- TAB: EVENTS MANAGEMENT -->
         <div id="tab-events" class="tab-content active">
              <div class="flex justify-between items-center mb-6 no-print">
                 <h2 class="text-2xl font-bold">مدیریت مالی رویدادها</h2>
                 <button onclick="openEventEditor()" class="btn btn-primary admin-only">+ رویداد جدید</button>
             </div>
-            
             <div id="events-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 no-print mb-8"></div>
-
             <div id="event-editor" class="bg-[#1e1e1e] p-6 rounded-lg border border-gray-800 hidden mt-6">
                 <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-4">
                     <h3 class="text-xl font-bold text-red-400">تعریف رویداد / اجرای جدید</h3>
@@ -203,25 +154,17 @@
                     </div>
                 </div>
                 <input type="hidden" id="event-id">
-                
                 <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 bg-[#252525] p-4 rounded-lg">
                     <div class="lg:col-span-2"><label class="block text-sm mb-1">نام برنامه</label><input type="text" id="event-name"></div>
                     <div>
                         <label class="block text-sm mb-1">نوع برنامه</label>
-                        <select id="event-type">
-                            <option value="اجرا">اجرا</option>
-                            <option value="ورکشاپ">ورکشاپ</option>
-                            <option value="رویداد">رویداد</option>
-                        </select>
+                        <select id="event-type"><option value="اجرا">اجرا</option><option value="ورکشاپ">ورکشاپ</option><option value="رویداد">رویداد</option></select>
                     </div>
                     <div><label class="block text-sm mb-1">از تاریخ</label><input type="text" id="event-start-date" placeholder="1403/08/15"></div>
                     <div><label class="block text-sm mb-1">تا تاریخ</label><input type="text" id="event-end-date" placeholder="1403/08/20"></div>
                     <div>
                         <label class="block text-sm mb-1">مدل فروش</label>
-                        <select id="event-pricing">
-                            <option value="fixed">بلیط ثابت</option>
-                            <option value="donation">دونیشن</option>
-                        </select>
+                        <select id="event-pricing"><option value="fixed">بلیط ثابت</option><option value="donation">دونیشن</option></select>
                     </div>
                     <div class="lg:col-span-2">
                         <label class="block text-sm mb-1 text-blue-300 font-bold">قیمت بلیط (تومان)</label>
@@ -240,8 +183,7 @@
 
                     <div class="bg-[#2a2a2a] p-4 rounded-lg lg:col-span-2 border border-blue-900/30">
                         <label class="block font-bold mb-2 text-blue-400">ادغام هوشمند و ورود سریع</label>
-                        <p class="text-xs text-gray-400 mb-2">اگر یک لیست اسم دارید و یک لیست شماره مجزا، هر دو را زیر هم پیست کنید. سیستم تلاش میکند به ترتیب نام‌ها، شماره‌های بدون صاحب را به آنها متصل کند.</p>
-                        <textarea id="fast-input" rows="5" class="w-full bg-[#1e1e1e] p-3 rounded text-sm" placeholder="علی رضایی&#10;سارا حسینی&#10;09123456789&#10;09351112233"></textarea>
+                        <textarea id="fast-input" rows="5" class="w-full bg-[#1e1e1e] p-3 rounded text-sm" placeholder="علی رضایی\nسارا حسینی\n09123456789\n09351112233"></textarea>
                         <button onclick="parseFastInput()" class="btn btn-secondary mt-3 w-full text-sm">پردازش و افزودن به لیست</button>
                     </div>
                 </div>
@@ -275,7 +217,6 @@
             </div>
         </div>
 
-        <!-- TAB: FINANCE DASHBOARD -->
         <div id="tab-finance" class="tab-content">
             <div class="flex justify-between items-center mb-6 no-print">
                 <h2 class="text-2xl font-bold">فایننس شیت جامع</h2>
@@ -291,7 +232,6 @@
             </div>
         </div>
 
-        <!-- TAB: CRM (AUDIENCE DB) -->
         <div id="tab-crm" class="tab-content">
             <div class="flex justify-between items-center mb-6 no-print">
                 <h2 class="text-2xl font-bold">بانک اطلاعات مخاطبین</h2>
@@ -306,19 +246,11 @@
         </div>
     </div>
 
-    <!-- MAIN APP SCRIPT -->
     <script>
-        // =========================================================================
-        // تنظیمات سوپابیس
-        // =========================================================================
         const SUPABASE_URL = 'https://nazzgnwrcgbujjeduekt.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_mrdGo65KhTDdIR7vLsYufQ_JjOfoan3';
-        // =========================================================================
         
-        let supabaseClient;
-        if(SUPABASE_KEY !== 'کلید_طولانی_شما_باید_اینجا_قرار_بگیرد') {
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        }
+        let supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = null;
         let currentRole = 'viewer';
@@ -329,15 +261,9 @@
         function showLoader() { document.getElementById('loader').style.display = 'flex'; }
         function hideLoader() { document.getElementById('loader').style.display = 'none'; }
 
-        /* ================= AUTHENTICATION UI ================= */
-        
         function selectUser(username) {
             selectedUsername = username;
-            
-            document.querySelectorAll('.user-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-            
+            document.querySelectorAll('.user-card').forEach(card => card.classList.remove('selected'));
             document.getElementById('user-' + username).classList.add('selected');
             
             const passContainer = document.getElementById('password-container');
@@ -347,14 +273,12 @@
             document.getElementById('password-label').innerText = `رمز عبور ${username} را وارد کنید`;
             document.getElementById('login-password').value = '';
             document.getElementById('login-password').focus();
-            
             document.getElementById('login-btn').classList.remove('disabled-action');
         }
 
         function togglePassword() {
             const passInput = document.getElementById('login-password');
             const eyeIcon = document.getElementById('eye-icon');
-            
             if (passInput.type === 'password') {
                 passInput.type = 'text';
                 eyeIcon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
@@ -365,74 +289,74 @@
         }
 
         async function checkSession() {
-            if(!supabaseClient) {
-                alert('خطا: کلید API سوپابیس جای‌گذاری نشده است.');
-                return;
-            }
             showLoader();
-            const { data, error } = await supabaseClient.auth.getSession();
-            if (data.session) {
-                currentUser = data.session.user;
-                await fetchUserProfile(currentUser.id);
-                document.getElementById('auth-section').classList.add('hidden');
-                document.getElementById('main-dashboard').classList.remove('hidden');
-                
-                const displayUsername = currentUser.email.split('@')[0];
-                document.getElementById('user-display').innerText = displayUsername;
-                
-                loadAllData();
-            } else {
+            try {
+                const { data, error } = await supabaseClient.auth.getSession();
+                if (error) throw error;
+
+                if (data.session) {
+                    currentUser = data.session.user;
+                    await fetchUserProfile(currentUser.id);
+                    document.getElementById('auth-section').classList.add('hidden');
+                    document.getElementById('main-dashboard').classList.remove('hidden');
+                    const displayUsername = currentUser.email.split('@')[0];
+                    document.getElementById('user-display').innerText = displayUsername;
+                    
+                    await loadAllData();
+                } else {
+                    document.getElementById('auth-section').classList.remove('hidden');
+                    document.getElementById('main-dashboard').classList.add('hidden');
+                }
+            } catch (err) {
+                console.error(err);
+                alert("خطا در ارتباط با سرور ابری:\n" + err.message + "\nاحتمالاً به دلیل اختلال اینترنت یا روشن نبودن فیلترشکن است.");
                 document.getElementById('auth-section').classList.remove('hidden');
-                document.getElementById('main-dashboard').classList.add('hidden');
+            } finally {
+                hideLoader();
             }
-            hideLoader();
         }
 
         async function fetchUserProfile(userId) {
-            const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', userId).single();
-            if (data) {
-                currentRole = data.role || 'viewer';
-            }
-            const roleBadge = document.getElementById('role-badge');
-            if (currentRole === 'admin') {
-                roleBadge.innerText = 'ادمین';
-                roleBadge.className = 'px-2 py-1 rounded text-xs bg-red-600 text-white';
-                document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'inline-block');
-            } else {
-                roleBadge.innerText = 'مشاهده‌گر';
-                roleBadge.className = 'px-2 py-1 rounded text-xs bg-gray-600 text-white';
-                document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+            try {
+                const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', userId).single();
+                if (data) currentRole = data.role || 'viewer';
+                
+                const roleBadge = document.getElementById('role-badge');
+                if (currentRole === 'admin') {
+                    roleBadge.innerText = 'ادمین';
+                    roleBadge.className = 'px-2 py-1 rounded text-xs bg-red-600 text-white';
+                    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'inline-block');
+                } else {
+                    roleBadge.innerText = 'مشاهده‌گر';
+                    roleBadge.className = 'px-2 py-1 rounded text-xs bg-gray-600 text-white';
+                    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+                }
+            } catch (err) {
+                console.error("Profile fetch error:", err);
             }
         }
 
         async function handleLogin() {
-            if(!selectedUsername) {
-                alert('لطفاً ابتدا نام کاربری خود را از لیست انتخاب کنید.');
-                return;
-            }
-            if(!supabaseClient) {
-                alert('ابتدا باید کلید API سوپابیس را در فایل ذخیره کنید!');
-                return;
-            }
-            
+            if(!selectedUsername) return alert('لطفاً ابتدا نام کاربری خود را انتخاب کنید.');
             const email = selectedUsername + '@mahalakeh.com';
             const password = document.getElementById('login-password').value;
-            
-            if(!password) {
-                alert('لطفاً رمز عبور را وارد کنید.');
-                return;
-            }
+            if(!password) return alert('لطفاً رمز عبور را وارد کنید.');
 
             showLoader();
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            hideLoader();
-            
-            if (error) {
-                const errEl = document.getElementById('auth-error');
-                errEl.innerText = "رمز عبور اشتباه است.";
-                errEl.classList.remove('hidden');
-            } else {
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) throw error;
                 checkSession();
+            } catch (err) {
+                const errEl = document.getElementById('auth-error');
+                if (err.message.includes('fetch')) {
+                    errEl.innerText = "ارتباط با سرور قطع است. (فیلترشکن را بررسی کنید)";
+                } else {
+                    errEl.innerText = "رمز عبور اشتباه است.";
+                }
+                errEl.classList.remove('hidden');
+            } finally {
+                hideLoader();
             }
         }
 
@@ -441,15 +365,24 @@
             location.reload();
         }
 
-        /* ================= LOAD DATA ================= */
         async function loadAllData() {
             showLoader();
-            const { data: eventsData } = await supabaseClient.from('events').select('*, expenses(*), attendees(*)').order('created_at', { ascending: false });
-            cloudEvents = eventsData || [];
-            const { data: ttData } = await supabaseClient.from('timetable').select('*').order('start_time', { ascending: true });
-            cloudTimetable = ttData || [];
-            hideLoader();
-            switchTab('tab-timetable'); // Default Tab
+            try {
+                const { data: eventsData, error: eErr } = await supabaseClient.from('events').select('*, expenses(*), attendees(*)').order('created_at', { ascending: false });
+                if(eErr) throw eErr;
+                cloudEvents = eventsData || [];
+                
+                const { data: ttData, error: tErr } = await supabaseClient.from('timetable').select('*').order('start_time', { ascending: true });
+                if(tErr) throw tErr;
+                cloudTimetable = ttData || [];
+                
+                switchTab('tab-timetable');
+            } catch (err) {
+                console.error(err);
+                alert("خطا در دریافت اطلاعات جداول:\n" + err.message);
+            } finally {
+                hideLoader();
+            }
         }
 
         function switchTab(tabId) {
@@ -531,11 +464,18 @@
                 start_time: document.getElementById('tt-start').value || null,
                 end_time: document.getElementById('tt-end').value || null
             };
+            
             showLoader();
-            if(id) await supabaseClient.from('timetable').update(payload).eq('id', id);
-            else await supabaseClient.from('timetable').insert([payload]);
-            await loadAllData(); 
-            document.getElementById('timetable-editor').classList.add('hidden');
+            try {
+                if(id) await supabaseClient.from('timetable').update(payload).eq('id', id);
+                else await supabaseClient.from('timetable').insert([payload]);
+                await loadAllData(); 
+                document.getElementById('timetable-editor').classList.add('hidden');
+            } catch (err) {
+                alert("خطا در ذخیره:\n" + err.message);
+            } finally {
+                hideLoader();
+            }
         }
 
         async function deleteTimetable() {
@@ -543,9 +483,15 @@
             const id = document.getElementById('tt-id').value;
             if(confirm('حذف شود؟')) {
                 showLoader();
-                await supabaseClient.from('timetable').delete().eq('id', id);
-                await loadAllData();
-                document.getElementById('timetable-editor').classList.add('hidden');
+                try {
+                    await supabaseClient.from('timetable').delete().eq('id', id);
+                    await loadAllData();
+                    document.getElementById('timetable-editor').classList.add('hidden');
+                } catch (err) {
+                    alert("خطا در حذف:\n" + err.message);
+                } finally {
+                    hideLoader();
+                }
             }
         }
 
@@ -679,8 +625,7 @@
 
         function parseFastInput() {
             const rawText = toEnglishDigits(document.getElementById('fast-input').value);
-            const lines = rawText.split('
-').map(l => l.trim()).filter(l => l);
+            const lines = rawText.split('\n').map(l => l.trim()).filter(l => l);
             const pricing = document.getElementById('event-pricing').value;
             const standardPrice = parseInt(document.getElementById('ticket-price').value) || 0;
 
@@ -692,7 +637,7 @@
                 let isGuest = /مهمان|رایگان|guest/i.test(line);
                 let customPrice = 0;
                 
-                const numMatch = line.match(/\d{4,}/g); 
+                const numMatch = line.match(/\b\d{4,}\b/g); 
                 if (numMatch && !isGuest) { customPrice = parseInt(numMatch[numMatch.length - 1]); }
 
                 let phone = phoneMatch ? phoneMatch[0] : '';
@@ -764,53 +709,73 @@
             };
 
             showLoader();
-            let finalEventId = eventIdStr;
+            try {
+                let finalEventId = eventIdStr;
 
-            if(isNew) {
-                const { data, error } = await supabaseClient.from('events').insert([eventPayload]).select();
-                finalEventId = data[0].id;
-            } else {
-                await supabaseClient.from('events').update(eventPayload).eq('id', finalEventId);
-                await supabaseClient.from('expenses').delete().eq('event_id', finalEventId);
-                await supabaseClient.from('attendees').delete().eq('event_id', finalEventId);
-            }
-
-            let expensesList = [];
-            document.querySelectorAll('#expenses-body tr').forEach(tr => {
-                const desc = tr.querySelector('.exp-desc').value.trim();
-                const amount = parseInt(tr.querySelector('.exp-amount').value) || 0;
-                if (desc || amount > 0) expensesList.push({ event_id: finalEventId, description: desc, amount: amount });
-            });
-            if(expensesList.length > 0) await supabaseClient.from('expenses').insert(expensesList);
-
-            let attendeesList = [];
-            document.querySelectorAll('#attendees-body tr').forEach(tr => {
-                const name = tr.querySelector('.att-name').value.trim();
-                if (name) {
-                    attendeesList.push({
-                        event_id: finalEventId,
-                        name: name,
-                        phone: tr.querySelector('.att-phone').value.trim(),
-                        telegram: tr.querySelector('.att-tg').value.trim(),
-                        paid: parseInt(tr.querySelector('.att-paid').value) || 0,
-                        is_guest: tr.querySelector('.att-guest').checked
-                    });
+                if(isNew) {
+                    const { data, error } = await supabaseClient.from('events').insert([eventPayload]).select();
+                    if(error) throw error;
+                    finalEventId = data[0].id;
+                } else {
+                    const {error: e1} = await supabaseClient.from('events').update(eventPayload).eq('id', finalEventId);
+                    if(e1) throw e1;
+                    await supabaseClient.from('expenses').delete().eq('event_id', finalEventId);
+                    await supabaseClient.from('attendees').delete().eq('event_id', finalEventId);
                 }
-            });
-            if(attendeesList.length > 0) await supabaseClient.from('attendees').insert(attendeesList);
 
-            await loadAllData();
-            closeEventEditor();
+                let expensesList = [];
+                document.querySelectorAll('#expenses-body tr').forEach(tr => {
+                    const desc = tr.querySelector('.exp-desc').value.trim();
+                    const amount = parseInt(tr.querySelector('.exp-amount').value) || 0;
+                    if (desc || amount > 0) expensesList.push({ event_id: finalEventId, description: desc, amount: amount });
+                });
+                if(expensesList.length > 0) {
+                    const {error: e2} = await supabaseClient.from('expenses').insert(expensesList);
+                    if(e2) throw e2;
+                }
+
+                let attendeesList = [];
+                document.querySelectorAll('#attendees-body tr').forEach(tr => {
+                    const name = tr.querySelector('.att-name').value.trim();
+                    if (name) {
+                        attendeesList.push({
+                            event_id: finalEventId,
+                            name: name,
+                            phone: tr.querySelector('.att-phone').value.trim(),
+                            telegram: tr.querySelector('.att-tg').value.trim(),
+                            paid: parseInt(tr.querySelector('.att-paid').value) || 0,
+                            is_guest: tr.querySelector('.att-guest').checked
+                        });
+                    }
+                });
+                if(attendeesList.length > 0) {
+                    const {error: e3} = await supabaseClient.from('attendees').insert(attendeesList);
+                    if(e3) throw e3;
+                }
+
+                await loadAllData();
+                closeEventEditor();
+            } catch (err) {
+                alert("خطا در ذخیره رویداد:\n" + err.message);
+            } finally {
+                hideLoader();
+            }
         }
 
         async function deleteCurrentEvent() {
             if(currentRole !== 'admin') return;
             if(confirm('آیا از حذف این رویداد مطمئن هستید؟')) {
-                const id = document.getElementById('event-id').value;
                 showLoader();
-                await supabaseClient.from('events').delete().eq('id', id);
-                await loadAllData();
-                closeEventEditor();
+                try {
+                    const id = document.getElementById('event-id').value;
+                    await supabaseClient.from('events').delete().eq('id', id);
+                    await loadAllData();
+                    closeEventEditor();
+                } catch (err) {
+                    alert("خطا در حذف:\n" + err.message);
+                } finally {
+                    hideLoader();
+                }
             }
         }
 
@@ -895,7 +860,7 @@
 
         // Init
         document.addEventListener('DOMContentLoaded', () => {
-            if(SUPABASE_URL !== 'لینک_پروژه_شما') { checkSession(); }
+            checkSession();
         });
     </script>
 </body>
