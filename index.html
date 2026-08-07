@@ -37,6 +37,11 @@
         
         .disabled-action { opacity: 0.5; pointer-events: none; }
         
+        /* Users Grid Styles */
+        .user-card { background-color: #2a2a2a; border: 2px solid #444; border-radius: 8px; padding: 1rem; text-align: center; cursor: pointer; transition: all 0.2s; }
+        .user-card:hover { border-color: #ef4444; background-color: #333; }
+        .user-card.selected { border-color: #ef4444; background-color: #ef4444; color: white; transform: scale(1.05); }
+        
         @media print {
             body { background-color: white; color: black; }
             .no-print { display: none !important; }
@@ -58,18 +63,39 @@
     <div id="loader"><div class="spinner"></div><p class="mt-4 text-white">در حال ارتباط با سرور ابری...</p></div>
 
     <!-- Auth Section -->
-    <div id="auth-section" class="max-w-md mx-auto mt-20 bg-[#1e1e1e] p-8 rounded-lg border border-gray-800 shadow-xl">
-        <h2 class="text-3xl font-bold text-red-500 mb-2 text-center">گریز به مهلکه</h2>
-        <p class="text-gray-400 text-center mb-6 text-sm">داشبورد گریز به مهلکه</p>
-        <div class="mb-4">
-            <label class="block text-sm mb-1">ایمیل کاربری</label>
-            <input type="text" id="login-email" placeholder="email@example.com" dir="ltr">
+    <div id="auth-section" class="max-w-lg mx-auto mt-12 bg-[#1e1e1e] p-8 rounded-lg border border-gray-800 shadow-xl">
+        <h2 class="text-3xl font-bold text-red-500 mb-2 text-center">عمارت ما</h2>
+        <p class="text-gray-400 text-center mb-8 text-sm">داشبورد گریز به مهلکه</p>
+        
+        <p class="text-sm mb-3 text-center text-gray-300">نام کاربری خود را انتخاب کنید:</p>
+        
+        <!-- User Selection Grid -->
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <div class="user-card" onclick="selectUser('amirhsn')" id="user-amirhsn">
+                <span class="block font-bold">amirhsn</span>
+            </div>
+            <div class="user-card" onclick="selectUser('mohsenxedri')" id="user-mohsenxedri">
+                <span class="block font-bold">mohsenxedri</span>
+            </div>
+            <div class="user-card" onclick="selectUser('morebakhtiar')" id="user-morebakhtiar">
+                <span class="block font-bold">morebakhtiar</span>
+            </div>
+            <div class="user-card" onclick="selectUser('benyamin')" id="user-benyamin">
+                <span class="block font-bold">benyamin</span>
+            </div>
         </div>
-        <div class="mb-6">
-            <label class="block text-sm mb-1">رمز عبور</label>
-            <input type="password" id="login-password" dir="ltr">
+
+        <div id="password-container" class="mb-8 hidden opacity-0 transition-opacity duration-300">
+            <label class="block text-sm mb-2 text-gray-300 text-center" id="password-label">رمز عبور را وارد کنید</label>
+            <div class="relative max-w-xs mx-auto">
+                <input type="password" id="login-password" dir="ltr" class="text-center text-lg tracking-widest pl-10" placeholder="••••••••">
+                <button type="button" onclick="togglePassword()" class="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white px-2">
+                    <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+            </div>
         </div>
-        <button onclick="handleLogin()" class="btn btn-primary w-full py-3 text-lg shadow-lg shadow-red-900/20">ورود به پنل</button>
+
+        <button onclick="handleLogin()" id="login-btn" class="btn btn-primary w-full py-3 text-lg shadow-lg shadow-red-900/20 disabled-action">ورود به پنل</button>
         <p id="auth-error" class="text-red-400 text-sm mt-4 text-center hidden"></p>
     </div>
 
@@ -284,12 +310,13 @@
     <script>
         /* ======================================================== */
         /* حتماً اطلاعات زیر را از پنل سوپابیس خود جایگذاری کنید */
+        /* حواستان باشد که علامت کوتیشن ' ' در ابتدا و انتهای لینک‌ها باقی بماند */
         /* ======================================================== */
         const SUPABASE_URL = 'https://nazzgnwrcgbujjeduekt.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_mrdGo65KhTDdIR7vLsYufQ_JjOfoan3';
+        const SUPABASE_KEY = 'کلید_کپی_شده_را_اینجا_قرار_دهید';
         
         let supabaseClient;
-        if(SUPABASE_URL !== 'لینک_پروژه_شما') {
+        if(SUPABASE_KEY !== 'کلید_کپی_شده_را_اینجا_قرار_دهید') {
             supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         }
 
@@ -297,14 +324,49 @@
         let currentRole = 'viewer';
         let cloudEvents = [];
         let cloudTimetable = [];
+        let selectedUsername = null; 
 
         function showLoader() { document.getElementById('loader').style.display = 'flex'; }
         function hideLoader() { document.getElementById('loader').style.display = 'none'; }
 
-        /* ================= AUTHENTICATION ================= */
+        /* ================= AUTHENTICATION UI ================= */
+        
+        function selectUser(username) {
+            selectedUsername = username;
+            
+            document.querySelectorAll('.user-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            document.getElementById('user-' + username).classList.add('selected');
+            
+            const passContainer = document.getElementById('password-container');
+            passContainer.classList.remove('hidden');
+            setTimeout(() => { passContainer.classList.remove('opacity-0'); }, 10);
+            
+            document.getElementById('password-label').innerText = `رمز عبور ${username} را وارد کنید`;
+            document.getElementById('login-password').value = '';
+            document.getElementById('login-password').focus();
+            
+            document.getElementById('login-btn').classList.remove('disabled-action');
+        }
+
+        function togglePassword() {
+            const passInput = document.getElementById('login-password');
+            const eyeIcon = document.getElementById('eye-icon');
+            
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                eyeIcon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+            } else {
+                passInput.type = 'password';
+                eyeIcon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+            }
+        }
+
         async function checkSession() {
             if(!supabaseClient) {
-                alert('لطفاً لینک پروژه و کلید API سوپابیس را در کد قرار دهید.');
+                alert('لطفاً کلید API را از سوپابیس کپی کرده و در کدهای فایل جایگذاری کنید.');
                 return;
             }
             showLoader();
@@ -314,7 +376,10 @@
                 await fetchUserProfile(currentUser.id);
                 document.getElementById('auth-section').classList.add('hidden');
                 document.getElementById('main-dashboard').classList.remove('hidden');
-                document.getElementById('user-display').innerText = currentUser.email.split('@')[0];
+                
+                const displayUsername = currentUser.email.split('@')[0];
+                document.getElementById('user-display').innerText = displayUsername;
+                
                 loadAllData();
             } else {
                 document.getElementById('auth-section').classList.remove('hidden');
@@ -328,7 +393,6 @@
             if (data) {
                 currentRole = data.role || 'viewer';
             }
-            // Role Based UI
             const roleBadge = document.getElementById('role-badge');
             if (currentRole === 'admin') {
                 roleBadge.innerText = 'ادمین';
@@ -342,14 +406,26 @@
         }
 
         async function handleLogin() {
-            const email = document.getElementById('login-email').value;
+            if(!selectedUsername) {
+                alert('لطفاً ابتدا نام کاربری خود را از لیست انتخاب کنید.');
+                return;
+            }
+            
+            const email = selectedUsername + '@mahalakeh.com';
             const password = document.getElementById('login-password').value;
+            
+            if(!password) {
+                alert('لطفاً رمز عبور را وارد کنید.');
+                return;
+            }
+
             showLoader();
             const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
             hideLoader();
+            
             if (error) {
                 const errEl = document.getElementById('auth-error');
-                errEl.innerText = "ایمیل یا رمز عبور اشتباه است.";
+                errEl.innerText = "رمز عبور اشتباه است.";
                 errEl.classList.remove('hidden');
             } else {
                 checkSession();
@@ -364,14 +440,10 @@
         /* ================= LOAD DATA ================= */
         async function loadAllData() {
             showLoader();
-            // Fetch Events
             const { data: eventsData } = await supabaseClient.from('events').select('*, expenses(*), attendees(*)').order('created_at', { ascending: false });
             cloudEvents = eventsData || [];
-            
-            // Fetch Timetable
             const { data: ttData } = await supabaseClient.from('timetable').select('*').order('start_time', { ascending: true });
             cloudTimetable = ttData || [];
-            
             hideLoader();
             switchTab('tab-timetable'); // Default Tab
         }
@@ -396,11 +468,9 @@
         function renderTimetable() {
             const list = document.getElementById('timetable-list');
             list.innerHTML = '';
-            
             if(cloudTimetable.length === 0) {
                 list.innerHTML = '<p class="text-gray-500 col-span-full">برنامه‌ای ثبت نشده است.</p>'; return;
             }
-
             cloudTimetable.forEach(item => {
                 const sDate = new Date(item.start_time);
                 const isPassed = sDate < new Date() ? 'opacity-50' : '';
@@ -457,13 +527,9 @@
                 start_time: document.getElementById('tt-start').value || null,
                 end_time: document.getElementById('tt-end').value || null
             };
-
             showLoader();
-            if(id) {
-                await supabaseClient.from('timetable').update(payload).eq('id', id);
-            } else {
-                await supabaseClient.from('timetable').insert([payload]);
-            }
+            if(id) await supabaseClient.from('timetable').update(payload).eq('id', id);
+            else await supabaseClient.from('timetable').insert([payload]);
             await loadAllData(); 
             document.getElementById('timetable-editor').classList.add('hidden');
         }
@@ -480,13 +546,11 @@
         }
 
         /* ================= EVENTS & FINANCE ================= */
-        // Utility: Convert Persian numbers to English
         function toEnglishDigits(str) {
             const persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
             const arabicNumbers  = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
             if(!str) return str;
-            return str.replace(/[۰-۹]/g, w => persianNumbers.indexOf(w))
-                      .replace(/[٠-٩]/g, w => arabicNumbers.indexOf(w));
+            return str.replace(/[۰-۹]/g, w => persianNumbers.indexOf(w)).replace(/[٠-٩]/g, w => arabicNumbers.indexOf(w));
         }
 
         function renderEventsList() {
@@ -494,8 +558,6 @@
             list.innerHTML = '';
             cloudEvents.forEach(ev => {
                 const totalExp = (ev.expenses || []).reduce((sum, item) => sum + item.amount, 0);
-                
-                // Calculate Income dynamically from attendees array
                 const totalIncome = (ev.attendees || []).reduce((sum, item) => sum + item.paid, 0);
                 const net = totalIncome - totalExp;
                 
@@ -522,12 +584,9 @@
 
         function openEventEditor() {
             if(currentRole !== 'admin') return alert('شما دسترسی ایجاد ندارید');
-            document.getElementById('event-id').value = '';
-            document.getElementById('event-name').value = '';
-            document.getElementById('event-start-date').value = '';
-            document.getElementById('event-end-date').value = '';
-            document.getElementById('expenses-body').innerHTML = '';
-            document.getElementById('attendees-body').innerHTML = '';
+            document.getElementById('event-id').value = ''; document.getElementById('event-name').value = '';
+            document.getElementById('event-start-date').value = ''; document.getElementById('event-end-date').value = '';
+            document.getElementById('expenses-body').innerHTML = ''; document.getElementById('attendees-body').innerHTML = '';
             document.getElementById('btn-delete-event').classList.add('hidden');
             document.getElementById('events-list').classList.add('hidden');
             document.getElementById('event-editor').classList.remove('hidden');
@@ -545,18 +604,13 @@
             document.getElementById('event-pricing').value = ev.pricing_model || 'fixed';
             document.getElementById('ticket-price').value = ev.ticket_price || 0;
             
-            // Populate Expenses
-            const expBody = document.getElementById('expenses-body');
-            expBody.innerHTML = '';
+            const expBody = document.getElementById('expenses-body'); expBody.innerHTML = '';
             (ev.expenses || []).forEach(exp => addExpenseRow(exp.description, exp.amount));
 
-            // Populate Attendees
-            const attBody = document.getElementById('attendees-body');
-            attBody.innerHTML = '';
+            const attBody = document.getElementById('attendees-body'); attBody.innerHTML = '';
             (ev.attendees || []).forEach(a => addAttendeeRow(a));
             
             if(currentRole === 'admin') document.getElementById('btn-delete-event').classList.remove('hidden');
-            
             document.getElementById('events-list').classList.add('hidden');
             document.getElementById('event-editor').classList.remove('hidden');
             updateEventSummary();
@@ -598,14 +652,10 @@
         function toggleGuest(checkbox) {
             const tr = checkbox.closest('tr');
             const paidInput = tr.querySelector('.att-paid');
-            if(checkbox.checked) {
-                paidInput.value = 0;
-                paidInput.disabled = true;
-            } else {
+            if(checkbox.checked) { paidInput.value = 0; paidInput.disabled = true; } 
+            else {
                 const pricing = document.getElementById('event-pricing').value;
-                if(pricing === 'fixed') {
-                    paidInput.value = document.getElementById('ticket-price').value || 0;
-                }
+                if(pricing === 'fixed') { paidInput.value = document.getElementById('ticket-price').value || 0; }
                 paidInput.disabled = false;
             }
             updateEventSummary();
@@ -617,9 +667,7 @@
             if(pricingModel === 'fixed') {
                 document.querySelectorAll('#attendees-body tr').forEach(tr => {
                     const isGuest = tr.querySelector('.att-guest').checked;
-                    if(!isGuest) {
-                        tr.querySelector('.att-paid').value = standardPrice;
-                    }
+                    if(!isGuest) { tr.querySelector('.att-paid').value = standardPrice; }
                 });
                 updateEventSummary();
             }
@@ -627,14 +675,11 @@
 
         function parseFastInput() {
             const rawText = toEnglishDigits(document.getElementById('fast-input').value);
-            const lines = rawText.split('
-').map(l => l.trim()).filter(l => l);
-            
+            const lines = rawText.split('\n').map(l => l.trim()).filter(l => l);
             const pricing = document.getElementById('event-pricing').value;
             const standardPrice = parseInt(document.getElementById('ticket-price').value) || 0;
 
-            let namesList = [];
-            let orphansList = []; 
+            let namesList = []; let orphansList = []; 
 
             lines.forEach(line => {
                 let phoneMatch = line.match(/(09\d{9})/);
@@ -642,7 +687,7 @@
                 let isGuest = /مهمان|رایگان|guest/i.test(line);
                 let customPrice = 0;
                 
-                const numMatch = line.match(/\d{4,}/g); 
+                const numMatch = line.match(/\b\d{4,}\b/g); 
                 if (numMatch && !isGuest) { customPrice = parseInt(numMatch[numMatch.length - 1]); }
 
                 let phone = phoneMatch ? phoneMatch[0] : '';
@@ -661,7 +706,6 @@
                 }
             });
 
-            // SMART MERGE
             let orphanIndex = 0;
             namesList.forEach(att => {
                 if(!att.phone && orphanIndex < orphansList.length) {
@@ -679,7 +723,6 @@
                 let o = orphansList[i];
                 addAttendeeRow({ name: 'ناشناس', phone: o.phone, telegram: o.telegram, isGuest: o.isGuest, paid: o.customPrice || 0});
             }
-
             document.getElementById('fast-input').value = '';
             updateEventSummary();
         }
@@ -723,12 +766,10 @@
                 finalEventId = data[0].id;
             } else {
                 await supabaseClient.from('events').update(eventPayload).eq('id', finalEventId);
-                // Clear old dependencies
                 await supabaseClient.from('expenses').delete().eq('event_id', finalEventId);
                 await supabaseClient.from('attendees').delete().eq('event_id', finalEventId);
             }
 
-            // Save Expenses
             let expensesList = [];
             document.querySelectorAll('#expenses-body tr').forEach(tr => {
                 const desc = tr.querySelector('.exp-desc').value.trim();
@@ -737,7 +778,6 @@
             });
             if(expensesList.length > 0) await supabaseClient.from('expenses').insert(expensesList);
 
-            // Save Attendees
             let attendeesList = [];
             document.querySelectorAll('#attendees-body tr').forEach(tr => {
                 const name = tr.querySelector('.att-name').value.trim();
@@ -781,9 +821,7 @@
                 const evExpenses = (ev.expenses || []).reduce((sum, item) => sum + item.amount, 0);
                 const evIncome = (ev.attendees || []).reduce((sum, item) => sum + item.paid, 0);
                 const net = evIncome - evExpenses;
-                const art = net * 0.5;
-                const mah = net * 0.25;
-                const ema = net * 0.25;
+                const art = net * 0.5; const mah = net * 0.25; const ema = net * 0.25;
                 const attendeesCount = (ev.attendees || []).length;
                 
                 totInc += evIncome; totExp += evExpenses; totNet += net;
@@ -829,18 +867,14 @@
                 (ev.attendees || []).forEach(a => {
                     if(!a.name && !a.phone) return;
                     const key = a.phone || a.name; 
-                    if(!db[key]) {
-                        db[key] = { name: a.name, phone: a.phone, telegram: a.telegram, count: 0, totalPaid: 0 };
-                    }
-                    db[key].count += 1;
-                    db[key].totalPaid += a.paid;
+                    if(!db[key]) { db[key] = { name: a.name, phone: a.phone, telegram: a.telegram, count: 0, totalPaid: 0 }; }
+                    db[key].count += 1; db[key].totalPaid += a.paid;
                     if(!db[key].phone && a.phone) db[key].phone = a.phone;
                     if(!db[key].telegram && a.telegram) db[key].telegram = a.telegram;
                 });
             });
 
             const sortedAudience = Object.values(db).sort((a,b) => b.count - a.count);
-
             sortedAudience.forEach(u => {
                 tbody.innerHTML += `
                     <tr class="hover:bg-[#252525]">
@@ -856,9 +890,8 @@
 
         // Init
         document.addEventListener('DOMContentLoaded', () => {
-            if(SUPABASE_URL !== 'لینک_پروژه_شما') {
-                checkSession();
-            }
+            if(SUPABASE_URL !== 'https://nazzgnwrcgbujjeduekt.supabase.co') { checkSession(); }
+            else if (SUPABASE_KEY !== 'کلید_کپی_شده_را_اینجا_قرار_دهید') { checkSession(); }
         });
     </script>
 </body>
